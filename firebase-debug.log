@@ -1,0 +1,67 @@
+[debug] [2025-01-23T18:47:38.229Z] ----------------------------------------------------------------------
+[debug] [2025-01-23T18:47:38.233Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Hashir\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2025-01-23T18:47:38.233Z] CLI Version:   12.9.1
+[debug] [2025-01-23T18:47:38.233Z] Platform:      win32
+[debug] [2025-01-23T18:47:38.234Z] Node Version:  v20.9.0
+[debug] [2025-01-23T18:47:38.234Z] Time:          Thu Jan 23 2025 23:47:38 GMT+0500 (Pakistan Standard Time)
+[debug] [2025-01-23T18:47:38.234Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-01-23T18:47:38.240Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2025-01-23T18:47:38.309Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-01-23T18:47:38.309Z] > authorizing via signed-in user (hashir.f01@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  D:\Coding\Node Projects\RidePSUBackend
+
+[debug] [2025-01-23T18:47:39.297Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2025-01-23T18:47:39.299Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2025-01-23T18:48:16.178Z] ----------------------------------------------------------------------
+[debug] [2025-01-23T18:48:16.183Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Hashir\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2025-01-23T18:48:16.184Z] CLI Version:   12.9.1
+[debug] [2025-01-23T18:48:16.185Z] Platform:      win32
+[debug] [2025-01-23T18:48:16.185Z] Node Version:  v20.9.0
+[debug] [2025-01-23T18:48:16.185Z] Time:          Thu Jan 23 2025 23:48:16 GMT+0500 (Pakistan Standard Time)
+[debug] [2025-01-23T18:48:16.186Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-01-23T18:48:16.200Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-01-23T18:48:16.201Z] > authorizing via signed-in user (hashir.f01@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  D:\Coding\Node Projects\RidePSUBackend
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2025-01-23T18:48:32.133Z] > refreshing access token with scopes: []
+[debug] [2025-01-23T18:48:32.137Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-01-23T18:48:32.137Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-01-23T18:48:32.854Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-01-23T18:48:32.855Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-01-23T18:48:32.884Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=100
+[debug] [2025-01-23T18:48:33.757Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2025-01-23T18:48:33.758Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
