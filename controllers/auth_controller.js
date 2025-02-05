@@ -116,9 +116,10 @@ const login = async (req, res) => {
       userData.name,
       userData.email,
       userData.phone,
+      userData.password,
       userData.role,
-      userData.password
     );
+
 
     res.status(200).json({
       message: 'Login successful!',
@@ -151,21 +152,30 @@ const signup = async (req, res) => {
       password,
       displayName: name,
     });
+    const token = await auth.createCustomToken(userRecord.uid);
+
 
     const user = new User(userRecord.uid, name, email, phone, hashedPassword, role);
 
     await db.collection('users').doc(userRecord.uid).set(user.toFirestore());
 
-    res.status(201).json({ message: 'User signed up successfully!', userId: userRecord.uid });
+    res.status(201).json({ message: 'User signed up successfully!',user: {
+      userId: userRecord.uid,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      phone: user.phone,
+    },
+    token, });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
 const editUser = async (req, res) => {
-  const { userId, name, email, phone, password, role } = req.body;
+  const { userId, name, email, phone, role } = req.body;
 
-  if (!userId || (!name && !email && !phone && !password && !role)) {
+  if (!userId || (!name && !email && !phone && !role)) {
     return res
       .status(400)
       .json({ error: 'User ID and at least one field to update are required.' });
@@ -185,13 +195,10 @@ const editUser = async (req, res) => {
     if (email && email !== userData.email) {
       await auth.updateUser(userId, { email });
       updates.email = email;
+    }else if(email){
+      updates.email = email;
     }
-
-    if (password) {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      await auth.updateUser(userId, { password });
-      updates.password = hashedPassword;
-    }
+    
 
     if (name) {
       updates.name = name;
@@ -210,7 +217,13 @@ const editUser = async (req, res) => {
       await userDocRef.update(updates);
     }
 
-    res.status(200).json({ message: 'User details updated successfully!' });
+    res.status(200).json({ message: 'User details updated successfully!' ,user: {
+      userId: userId,
+      name: updates.name,
+      email: updates.email,
+      role: updates.role,
+      phone: updates.phone,
+    },});
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
