@@ -1,6 +1,7 @@
 const express = require('express');
 const authController = require('./controllers/auth_controller');
 const scheduleController = require('./controllers/schedule_controller');
+const bookingController = require('./controllers/booking_controller');
 
 const router = express.Router();
 
@@ -15,5 +16,13 @@ router.put('/edit-user', authController.editUser);
 // Schedules
 router.get('/get-schedules', scheduleController.getSchedules);
 router.post('/add-schedule', scheduleController.addSchedule);
+router.post('/add-driver', scheduleController.addDriver);
+router.get('/get-driver-schedules', scheduleController.getSchedulesByDriverId);
+
+// Bookings
+router.post('/create-booking', bookingController.createBooking);
+router.get('/booking-count', bookingController.bookingCount);
+router.get('/get-bookings/:userId', bookingController.getBookingsById);
+router.delete('/delete-booking/:userId', bookingController.deleteBooking);
 
 module.exports = router;

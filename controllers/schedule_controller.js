@@ -16,6 +16,25 @@ const getSchedules = async (req, res) => {
   }
 };
 
+
+const getSchedulesByDriverId = async (req, res) => {
+  try {
+    const { driverId } = req.query;
+    let query = db.collection('schedules');
+
+    if (driverId) {
+        query = query.where('driverId', '==', driverId);
+    }
+
+    const snapshot = await query.get();
+    const schedules = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.status(200).json(schedules);
+} catch (error) {
+    res.status(500).json({ error: error.message });
+}
+};
+
+
 const getScheduleById = async (req, res) => {
   const { id } = req.params;
   try {
@@ -28,6 +47,42 @@ const getScheduleById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
+// Assign driver to routes based on conditions
+// Just a helper function for adding driver Id to multiple schedules at once
+const addDriver= async (req, res) => {
+  try {
+      const { driverId, startTimeFrom, startTimeTo, transportType } = req.body;
+
+      if (!driverId || !startTimeFrom || !startTimeTo || !transportType) {
+          return res.status(400).json({ message: 'Missing required fields' });
+      }
+
+      const schedulesRef = db.collection('schedules');
+      const querySnapshot = await schedulesRef
+          .where('time', '>=', startTimeFrom)
+          .where('time', '<=', startTimeTo)
+          .where('transportType', '==', transportType)
+          .get();
+
+      if (querySnapshot.empty) {
+          return res.status(404).json({ message: 'No schedules found' });
+      }
+      const updatePromises = [];
+      querySnapshot.forEach((doc) => {
+          const scheduleRef = schedulesRef.doc(doc.id);
+          updatePromises.push(scheduleRef.update({ driverId }));
+      });
+
+      await Promise.all(updatePromises);
+      res.status(200).json({ message: 'Driver assigned successfully' });
+  } catch (error) {
+      console.error('Error assigning driver:', error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 
 const addSchedule = async (req, res) => {
     const { time, pickupLocations, dropoffLocations, transportType } = req.body;
@@ -135,4 +190,6 @@ module.exports = {
   addSchedule,
   updateSchedule,
   deleteSchedule,
+  addDriver,
+  getSchedulesByDriverId
 };
