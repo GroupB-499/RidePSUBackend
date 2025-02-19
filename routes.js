@@ -2,6 +2,7 @@ const express = require('express');
 const authController = require('./controllers/auth_controller');
 const scheduleController = require('./controllers/schedule_controller');
 const bookingController = require('./controllers/booking_controller');
+const locationsController = require('./controllers/locations_controller');
 
 const router = express.Router();
 
@@ -23,6 +24,9 @@ router.get('/get-driver-schedules', scheduleController.getSchedulesByDriverId);
 router.post('/create-booking', bookingController.createBooking);
 router.get('/booking-count', bookingController.bookingCount);
 router.get('/get-bookings/:userId', bookingController.getBookingsById);
-router.delete('/delete-booking/:userId', bookingController.deleteBooking);
+router.delete('/delete-booking', bookingController.deleteBooking);
+
+// Locations
+router.get('/locations', locationsController.fetchLocations);
 
 module.exports = router;

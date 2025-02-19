@@ -1,8 +1,7 @@
 class Schedule {
-    constructor(id, time, endTime, pickupLocations, dropoffLocations, transportType) {
-      this.id = id;
+    constructor(scheduleId, time, pickupLocations, dropoffLocations, transportType) {
+      this.scheduleId = scheduleId;
       this.time = time;
-      this.endTime = endTime;
       this.pickupLocations = pickupLocations;
       this.dropoffLocations = dropoffLocations;
       this.transportType = transportType;
