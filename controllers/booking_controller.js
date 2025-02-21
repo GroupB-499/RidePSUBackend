@@ -2,10 +2,10 @@ const { db } = require('../firebase');
 
 const createBooking = async (req, res) => {
   try {
-      const { departure, destination, transportType, date, time, userId } = req.body;
+      const { transportType, date, time, userId } = req.body;
 
       // Check for missing required fields
-      if (!departure || !destination || !transportType || !date || !time || !userId) {
+      if (!transportType || !date || !time || !userId) {
           return res.status(400).json({ message: 'Missing required fields' });
       }
 

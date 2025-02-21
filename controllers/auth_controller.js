@@ -121,7 +121,7 @@ const login = async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, userData.password); //compares the password provided by the user with the hashed password stored in the database using bcrypt.
 
     if (!isPasswordValid) { //checks if the password provided by the user does not match the stored password.
-      return res.status(401).json({ error: 'Invalid email or password.' }); //sends a 401 status response with an error message for invalid email or password.
+      return res.status(401).json({ error: 'Invalid password.' }); //sends a 401 status response with an error message for invalid email or password.
     }
 
     const token = await auth.createCustomToken(userData.userId); //creates a custom authentication token for the user using Firebase Authentication.
