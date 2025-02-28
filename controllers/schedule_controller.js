@@ -56,6 +56,7 @@ const getScheduleById = async (req, res) => {
 // Just a helper function for adding driver Id to multiple schedules at once
 const addDriver= async (req, res) => {
   try {
+    console.log("HELLO!");
       const { driverId, startTimeFrom, startTimeTo, transportType } = req.body;
 
       if (!driverId || !startTimeFrom || !startTimeTo || !transportType) {

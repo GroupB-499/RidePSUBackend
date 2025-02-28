@@ -15,9 +15,10 @@ router.post('/reset-password', authController.resetPassword);
 router.put('/edit-user', authController.editUser);
 
 // Schedules
+router.post('/add-driver', scheduleController.addDriver);
+
 router.get('/get-schedules', scheduleController.getSchedules);
 router.post('/add-schedule', scheduleController.addSchedule);
-router.post('/add-driver', scheduleController.addDriver);
 router.get('/get-driver-schedules', scheduleController.getSchedulesByDriverId);
 
 // Bookings
