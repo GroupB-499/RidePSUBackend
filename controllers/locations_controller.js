@@ -1,4 +1,5 @@
 const { db } = require('../firebase');
+const axios = require('axios');
 
 const addLocation = async (req, res) => {
     try {
@@ -52,8 +53,35 @@ const addLocation = async (req, res) => {
     }
   };
 
+  const fetchGeoLocation =  async (req, res) => {
+    const { address } = req.query;
+    if (!address) {
+      return res.status(400).json({ error: 'Address query parameter is required' });
+    }
+  
+    try {
+      const response = await axios.get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json`, {
+        params: {
+          access_token: MAPBOX_ACCESS_TOKEN,
+        },
+      });
+  
+      const { features } = response.data;
+      if (features.length === 0) {
+        return res.status(404).json({ error: 'No results found' });
+      }
+  
+      const [longitude, latitude] = features[0].center;
+      res.json({ latitude, longitude });
+    } catch (error) {
+      console.error('Error fetching geocoding data:', error);
+      res.status(500).json({ error: 'Failed to fetch geocoding data' });
+    }
+  };
+
   module.exports = {
     addLocation,
 fetchLocations,
+fetchGeoLocation,
   }
   

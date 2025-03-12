@@ -19,6 +19,29 @@ const getSchedules = async (req, res) => { // Get all schedules, function named 
   }
 };
 
+const getNotificationsById = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const snapshot = await db.collection("notifications")
+      .where("userId", "==", userId)
+      .orderBy("timestamp", "desc")
+      .get();
+
+    if (snapshot.empty) {
+      return res.status(404).json({ message: "No notifications found." });
+    }
+
+    const notifications = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    res.status(200).json({ notifications });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 const getSchedulesByDriverId = async (req, res) => {
   try {
@@ -195,5 +218,6 @@ module.exports = { // Exporting the controller functions
   updateSchedule,
   deleteSchedule,
   addDriver,
-  getSchedulesByDriverId
+  getSchedulesByDriverId,
+  getNotificationsById,
 };

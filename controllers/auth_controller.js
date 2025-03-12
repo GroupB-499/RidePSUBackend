@@ -244,10 +244,53 @@ const editUser = async (req, res) => {
   }
 };
 
+const getUserById = async (req, res) => {
+  try {
+      const userId  = req.params.userId;
+
+      if (!userId) {
+          return res.status(400).json({ error: "User ID is required" });
+      }
+
+      const userRef = db.collection("users").doc(userId);
+      const userDoc = await userRef.get();
+
+      if (!userDoc.exists) {
+          return res.status(404).json({ error: "User not found" });
+      }
+
+      res.status(200).json({ user: { id: userDoc.id, ...userDoc.data() } });
+  } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const checkEmailValidity = async (req, res) => {
+  try {
+    const { email } = req.params;
+    if (!email) return res.status(400).json({ error: "Email is required" });
+
+    // Fetch user by email
+    const userRecord = await auth.getUserByEmail(email);
+    
+    // If user exists, return response
+    return res.json({ exists: true, uid: userRecord.uid });
+  } catch (error) {
+    if (error.code === "auth/user-not-found") {
+      return res.json({ exists: false });
+    }
+    console.error("Error checking email:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }}
+
+
 // Export the editUser function for use in other modules
 exports.sendOtp = sendOtp;
 exports.signup = signup;
+exports.getUserById = getUserById;
 exports.login = login;
 exports.verifyOtp = verifyOtp;
+exports.checkEmailValidity = checkEmailValidity;
 exports.resetPassword = resetPassword;
 exports.editUser = editUser;

@@ -1,4 +1,5 @@
 const { db } = require('../firebase');
+const { FieldValue } = require('firebase-admin/firestore');
 
 const createBooking = async (req, res) => {
     try {
@@ -65,6 +66,7 @@ const bookingCount = async (req, res) => {
         if (schedulesSnapshot.empty) {
             return res.status(404).json({ error: "No booking available!" }); // No schedules found for the time
         }
+        console.log(schedulesSnapshot.docs[0]);
 
         // Extract the scheduleId from the first matching schedule document
         const scheduleId = schedulesSnapshot.docs[0].id;
@@ -104,6 +106,8 @@ const getBookingsById = async (req, res) => {
         for (const doc of snapshot.docs) {
             const bookingData = doc.data();
             const scheduleId = bookingData.scheduleId;
+
+            console.log(`Schedulessssssss  ${scheduleId}`)
 
             // Fetch the corresponding schedule details
             const scheduleDoc = await schedulesRef.doc(scheduleId).get();
@@ -148,9 +152,229 @@ const deleteBooking = async (req, res) => {
     }
 };
 
+const getLatestBooking = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        if (!userId) {
+            return res.status(400).json({ error: "User ID is required" });
+        }
+
+        const now = new Date();
+        const today = now.toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+        const currentTime = now.getTime();
+
+        // Fetch bookings for today
+        const bookingSnapshot = await db.collection('bookings')
+            .where('userId', '==', userId)
+            .where('date', '>=', today)
+            .orderBy('date')
+            .get();
+
+        if (bookingSnapshot.empty) {
+            return res.status(404).json({ message: 'No upcoming bookings found' });
+        }
+
+        let upcomingBooking = null;
+        let minTime = Infinity;
+
+        for (const doc of bookingSnapshot.docs) {
+            const booking = doc.data();
+
+            // Fetch schedule details
+            const scheduleRef = db.collection('schedules').doc(booking.scheduleId);
+            const scheduleDoc = await scheduleRef.get();
+
+            if (!scheduleDoc.exists) continue;
+
+            const scheduleData = scheduleDoc.data();
+            const bookingDate = new Date(`${booking.date}T${scheduleData.time}:00`);
+
+            const bookingTime = bookingDate.getTime();
+
+            console.log(bookingTime);
+            console.log(currentTime);
+            // Check if booking time is in the future (but not expired)
+
+            if (currentTime >= bookingTime && currentTime <= (bookingTime + 600)) { // 600 means 10 minutes in epoch time
+                upcomingBooking = {
+                    id: doc.id,
+                    date: booking.date,
+                    driverId: scheduleData.driverId,
+                    time: scheduleData.time,
+                    pickup: scheduleData.pickupLocations[0],
+                    dropoff: scheduleData.dropoffLocations[0],
+                    transportType: scheduleData.transportType
+                };
+            } else if (bookingTime > currentTime) {
+                if (bookingTime < minTime) {
+                    minTime = bookingTime;
+                    upcomingBooking = {
+                        id: doc.id,
+                        date: booking.date,
+                        driverId: scheduleData.driverId,
+                        time: scheduleData.time,
+                        pickup: scheduleData.pickupLocations[0],
+                        dropoff: scheduleData.dropoffLocations[0],
+                        transportType: scheduleData.transportType
+                    };
+                }
+            }
+
+        }
+
+        if (!upcomingBooking) {
+            return res.status(404).json({ message: "No valid upcoming booking found" });
+        }
+
+
+
+        return res.json({ booking: upcomingBooking });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
+const getLatestDriverBooking = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        if (!userId) {
+            return res.status(400).json({ error: "Driver ID is required" });
+        }
+
+        
+        let minTime = Infinity;
+        const now = new Date();
+        var localDate = now.toLocaleDateString('en-GB', { timeZone: 'Asia/Karachi' }); // Returns DD/MM/YYYY
+
+        var [day, month, year] = localDate.split('/');
+        var todaysDate = `${year}-${month}-${day}`; // Ensures YYYY-MM-DD format
+
+        var currentTime = now.getTime();
+
+        // Fetch all bookings assigned to the driver
+        const snapshot = await db.collection("schedules")
+            .where("driverId", "==", userId)
+            .get();
+
+        if (snapshot.empty) {
+            return res.status(404).json({ message: "No upcoming bookings found" });
+        }
+
+        // Filter upcoming bookings
+        let upcomingBooking = null;
+
+        snapshot.forEach(doc => {
+            const schedule = doc.data();
+            var bookingDateInEpochs = new Date(`${todaysDate}T${schedule.time}:00`);
+            var bookingTime = bookingDateInEpochs.getTime();
+
+            if (currentTime > bookingTime) {
+                now.setDate(now.getDate() + 1);
+
+                localDate = now.toLocaleDateString('en-GB', { timeZone: 'Asia/Karachi' }); // Returns DD/MM/YYYY
+
+                [day, month, year] = localDate.split('/');
+                todaysDate = `${year}-${month}-${day}`;
+
+                bookingDateInEpochs = new Date(`${todaysDate}T${schedule.time}:00`);
+                bookingTime = bookingDateInEpochs.getTime();
+            }
+
+            console.log(bookingTime);
+            console.log(currentTime);
+
+            // Booking should be within current time and 10 minutes after, and should be the closest one
+            if (currentTime >= bookingTime && currentTime <= bookingTime + 600) { // 600 means 10 minutes in epoch time
+
+                upcomingBooking = {
+                    id: doc.id,
+                    date: todaysDate,
+                    time: schedule.time,
+                    pickup: schedule.pickupLocations[0],
+                    dropoff: schedule.dropoffLocations[0],
+                    transportType: schedule.transportType
+                };
+            } else if (bookingTime > currentTime) {
+                if (bookingTime < minTime) {
+                    minTime = bookingTime;
+                upcomingBooking = {
+                    id: doc.id,
+                    date: todaysDate,
+                    time: schedule.time,
+                    pickup: schedule.pickupLocations[0],
+                    dropoff: schedule.dropoffLocations[0],
+                    transportType: schedule.transportType
+                };
+            }
+            }
+        });
+
+        if (!upcomingBooking) {
+            return res.status(404).json({ message: "No valid upcoming bookings found" });
+        }
+
+        res.status(200).json({ booking: upcomingBooking });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const saveFCMToken = async (req, res) => {
+    const { userId, role, token } = req.body;
+
+    if (!userId || !role || !token) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+        const userRef = db.collection('fcmTokens').doc(userId);
+
+        const doc = await userRef.get();
+        if (doc.exists) {
+            // Append new token if it's not already stored
+            await userRef.update({
+                tokens: FieldValue.arrayUnion(token)
+            });
+        } else {
+            // Create a new entry if userId does not exist
+            await userRef.set({ userId, role, tokens: [token] });
+        }
+
+        res.json({ message: 'FCM token saved successfully' });
+    } catch (error) {
+        console.error('Error saving token:', error);
+        res.status(500).json({ error: 'Failed to save FCM token' });
+    }
+};
+
+const delayBooking = async (req, res) => {
+    try {
+        const { bookingId, delayTime } = req.body;
+
+        if (!bookingId || delayTime === undefined) {
+            return res.status(400).json({ error: "Booking ID and delay time are required" });
+        }
+
+        const bookingRef = db.collection('bookings').doc(bookingId);
+        await bookingRef.update({ delayTime });
+
+        res.status(200).json({ message: "Delay time updated successfully"});
+    } catch (error) {
+        console.error('Error updating delay time:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+
+
+
 module.exports = {
     createBooking,
     bookingCount,
+    delayBooking,
     getBookingsById,
-    deleteBooking
+    deleteBooking,
+    saveFCMToken,
+    getLatestDriverBooking,
+    getLatestBooking,
 };
