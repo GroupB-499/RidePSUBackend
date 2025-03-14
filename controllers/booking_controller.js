@@ -240,17 +240,15 @@ const getLatestDriverBooking = async (req, res) => {
             return res.status(400).json({ error: "Driver ID is required" });
         }
 
-        
-        let minTime = Infinity;
         const now = new Date();
-        var localDate = now.toLocaleDateString('en-GB', { timeZone: 'Asia/Karachi' }); // Returns DD/MM/YYYY
+        const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: "Asia/Riyadh" };
+        const currentDate = now.toLocaleDateString('en-CA', options); // Format: YYYY-MM-DD
 
-        var [day, month, year] = localDate.split('/');
-        var todaysDate = `${year}-${month}-${day}`; // Ensures YYYY-MM-DD format
+        const currentTime = now.toLocaleTimeString('en-GB', { hour12: false, timeZone: "Asia/Riyadh" }); // Format: HH:MM:SS
 
-        var currentTime = now.getTime();
+        let minTime = "24:00";
 
-        // Fetch all bookings assigned to the driver
+
         const snapshot = await db.collection("schedules")
             .where("driverId", "==", userId)
             .get();
@@ -264,30 +262,22 @@ const getLatestDriverBooking = async (req, res) => {
 
         snapshot.forEach(doc => {
             const schedule = doc.data();
-            var bookingDateInEpochs = new Date(`${todaysDate}T${schedule.time}:00`);
-            var bookingTime = bookingDateInEpochs.getTime();
 
-            if (currentTime > bookingTime) {
-                now.setDate(now.getDate() + 1);
+            const bookingTime = schedule.time;
+            const bookingHour = bookingTime.split(":")[0];
+            const bookingMinutes = bookingTime.split(":")[1];
+            const endTime = bookingHour + ":" + (Number(bookingMinutes) + 10)
 
-                localDate = now.toLocaleDateString('en-GB', { timeZone: 'Asia/Karachi' }); // Returns DD/MM/YYYY
-
-                [day, month, year] = localDate.split('/');
-                todaysDate = `${year}-${month}-${day}`;
-
-                bookingDateInEpochs = new Date(`${todaysDate}T${schedule.time}:00`);
-                bookingTime = bookingDateInEpochs.getTime();
-            }
-
-            console.log(bookingTime);
-            console.log(currentTime);
+            console.log(currentDate)
+            console.log(currentTime)
+            console.log(bookingTime)
+            console.log(endTime)
 
             // Booking should be within current time and 10 minutes after, and should be the closest one
-            if (currentTime >= bookingTime && currentTime <= bookingTime + 600) { // 600 means 10 minutes in epoch time
-
+            if (currentTime >= bookingTime && currentTime <= endTime) { // 600 means 10 minutes in epoch time
                 upcomingBooking = {
                     id: doc.id,
-                    date: todaysDate,
+                    date: currentDate,
                     time: schedule.time,
                     pickup: schedule.pickupLocations[0],
                     dropoff: schedule.dropoffLocations[0],
@@ -296,20 +286,20 @@ const getLatestDriverBooking = async (req, res) => {
             } else if (bookingTime > currentTime) {
                 if (bookingTime < minTime) {
                     minTime = bookingTime;
-                upcomingBooking = {
-                    id: doc.id,
-                    date: todaysDate,
-                    time: schedule.time,
-                    pickup: schedule.pickupLocations[0],
-                    dropoff: schedule.dropoffLocations[0],
-                    transportType: schedule.transportType
-                };
-            }
+                    upcomingBooking = {
+                        id: doc.id,
+                        date: currentDate,
+                        time: schedule.time,
+                        pickup: schedule.pickupLocations[0],
+                        dropoff: schedule.dropoffLocations[0],
+                        transportType: schedule.transportType
+                    };
+                }
             }
         });
 
         if (!upcomingBooking) {
-            return res.status(404).json({ message: "No valid upcoming bookings found" });
+            return res.status(404).json({ message: "No upcoming bookings found" });
         }
 
         res.status(200).json({ booking: upcomingBooking });
@@ -345,19 +335,29 @@ const saveFCMToken = async (req, res) => {
         res.status(500).json({ error: 'Failed to save FCM token' });
     }
 };
-
 const delayBooking = async (req, res) => {
     try {
-        const { bookingId, delayTime } = req.body;
+        const { scheduleId, delayTime } = req.body;
 
-        if (!bookingId || delayTime === undefined) {
+        if (!scheduleId || delayTime === undefined) {
             return res.status(400).json({ error: "Booking ID and delay time are required" });
         }
 
-        const bookingRef = db.collection('bookings').doc(bookingId);
-        await bookingRef.update({ delayTime });
+        const bookingsRef = db.collection('bookings');
+        const snapshot = await bookingsRef.where('scheduleId', '==', scheduleId).get();
 
-        res.status(200).json({ message: "Delay time updated successfully"});
+        if (snapshot.empty) {
+            return res.status(404).json({ error: "No bookings found for the given scheduleId" });
+        }
+
+        const batch = db.batch();
+        snapshot.forEach(doc => {
+            batch.update(doc.ref, { delayTime });
+        });
+
+        await batch.commit();
+
+        res.status(200).json({ message: "Delay time updated successfully for matching bookings" });
     } catch (error) {
         console.error('Error updating delay time:', error);
         res.status(500).json({ error: error.message });
