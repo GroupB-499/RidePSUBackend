@@ -168,7 +168,7 @@ cron.schedule("* * * * *", async () => {
   try {
     const schedulesSnapshot = await db
       .collection("schedules")
-      .where("time", "==", currentTimeString)
+      .where("time", "==", "08:10")
       .get();
 
     if (schedulesSnapshot.empty) {
@@ -182,8 +182,10 @@ cron.schedule("* * * * *", async () => {
     console.log("schedule ids: " + scheduleIds);
 
     // Fetch bookings that have today's date and one of the schedule IDs
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-
+    
+    const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: "Asia/Riyadh" };
+    const today = now.toLocaleDateString('en-CA', options); // YYYY-MM-DD
+    console.log(today);
     const bookingsSnapshot = await db
       .collection("bookings")
       .where("date", "==", today) // Date filter
@@ -192,7 +194,7 @@ cron.schedule("* * * * *", async () => {
     const userIds = new Set();
     bookingsSnapshot.forEach((doc) => {
       const booking = doc.data();
-      console.log("bookings" + booking)
+      console.log("bookings" + booking.scheduleId)
       if (scheduleIds.includes(booking.scheduleId)) {
         userIds.add(booking.userId);
       }
