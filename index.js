@@ -147,9 +147,8 @@ if(userId != null){
   }
 }
 
-// cron.schedule("/10 8-18 * * *", async () => {
 
-cron.schedule("10 * * * *", async () => {
+cron.schedule("* * * * *", async () => {
   console.log("Running notification scheduler...");
 
   const now = new Date();

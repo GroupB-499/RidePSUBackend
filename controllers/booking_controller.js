@@ -162,6 +162,7 @@ const getLatestBooking = async (req, res) => {
         const now = new Date();
         const today = now.toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
         const currentTime = now.getTime();
+        // const currentTime = 1742097600000;
 
         // Fetch bookings for today
         const bookingSnapshot = await db.collection('bookings')
@@ -176,18 +177,27 @@ const getLatestBooking = async (req, res) => {
 
         let upcomingBooking = null;
         let minTime = Infinity;
+        
+        var currentBookingFlag = false;
 
-        for (const doc of bookingSnapshot.docs) {
+        for (const doc of bookingSnapshot.docs) { 
             const booking = doc.data();
+
+            const bookingDateDb = booking.date.split("-");
+            const bookingYear = Number(bookingDateDb[0]);
+            const bookingMonth = Number(bookingDateDb[1]);
+            const bookingDay = Number(bookingDateDb[2]);
 
             // Fetch schedule details
             const scheduleRef = db.collection('schedules').doc(booking.scheduleId);
             const scheduleDoc = await scheduleRef.get();
-
-            if (!scheduleDoc.exists) continue;
-
             const scheduleData = scheduleDoc.data();
-            const bookingDate = new Date(`${booking.date}T${scheduleData.time}:00`);
+
+            const scheduleTimeDb = scheduleData.time.split(":");
+            const scheduleTimeHour = Number(scheduleTimeDb[0]);
+            const scheduleTimeMinutes = Number(scheduleTimeDb[1]);
+
+            const bookingDate = new Date(bookingYear, bookingMonth-1, bookingDay, scheduleTimeHour, scheduleTimeMinutes, 0, 0);
 
             const bookingTime = bookingDate.getTime();
 
@@ -196,6 +206,7 @@ const getLatestBooking = async (req, res) => {
             // Check if booking time is in the future (but not expired)
 
             if (currentTime >= bookingTime && currentTime <= (bookingTime + 600)) { // 600 means 10 minutes in epoch time
+                console.log("ahsdhashd");
                 upcomingBooking = {
                     id: doc.id,
                     date: booking.date,
@@ -205,22 +216,30 @@ const getLatestBooking = async (req, res) => {
                     dropoff: scheduleData.dropoffLocations[0],
                     transportType: scheduleData.transportType
                 };
+                currentBookingFlag = true;
             } else if (bookingTime > currentTime) {
-                if (bookingTime < minTime) {
-                    minTime = bookingTime;
-                    upcomingBooking = {
-                        id: doc.id,
-                        date: booking.date,
-                        driverId: scheduleData.driverId,
-                        time: scheduleData.time,
-                        pickup: scheduleData.pickupLocations[0],
-                        dropoff: scheduleData.dropoffLocations[0],
-                        transportType: scheduleData.transportType
-                    };
+                if(!currentBookingFlag){
+                    if (bookingTime < minTime) {
+                console.log("a1232");
+
+                        minTime = bookingTime;
+                        upcomingBooking = {
+                            id: doc.id,
+                            date: booking.date,
+                            driverId: scheduleData.driverId,
+                            time: scheduleData.time,
+                            pickup: scheduleData.pickupLocations[0],
+                            dropoff: scheduleData.dropoffLocations[0],
+                            transportType: scheduleData.transportType
+                        };
+                    }
                 }
+                
             }
 
-        }
+        };
+
+        console.log('COMSOMDSOMDOS');
 
         if (!upcomingBooking) {
             return res.status(404).json({ message: "No valid upcoming booking found" });
@@ -259,6 +278,7 @@ const getLatestDriverBooking = async (req, res) => {
 
         // Filter upcoming bookings
         let upcomingBooking = null;
+        let currentBookingFlag = false;
 
         snapshot.forEach(doc => {
             const schedule = doc.data();
@@ -274,7 +294,8 @@ const getLatestDriverBooking = async (req, res) => {
             console.log(endTime)
 
             // Booking should be within current time and 10 minutes after, and should be the closest one
-            if (currentTime >= bookingTime && currentTime <= endTime) { // 600 means 10 minutes in epoch time
+            if (currentTime >= bookingTime && currentTime <= endTime) {
+                console.log("FETCHING CURRENT BOOKING!")
                 upcomingBooking = {
                     id: doc.id,
                     date: currentDate,
@@ -283,18 +304,23 @@ const getLatestDriverBooking = async (req, res) => {
                     dropoff: schedule.dropoffLocations[0],
                     transportType: schedule.transportType
                 };
+                currentBookingFlag = true;
             } else if (bookingTime > currentTime) {
-                if (bookingTime < minTime) {
-                    minTime = bookingTime;
-                    upcomingBooking = {
-                        id: doc.id,
-                        date: currentDate,
-                        time: schedule.time,
-                        pickup: schedule.pickupLocations[0],
-                        dropoff: schedule.dropoffLocations[0],
-                        transportType: schedule.transportType
-                    };
+                console.log("FETCHING CURRENT BOOKING12!")
+                if(!currentBookingFlag){
+                    if (bookingTime < minTime) {
+                        minTime = bookingTime;
+                        upcomingBooking = {
+                            id: doc.id,
+                            date: currentDate,
+                            time: schedule.time,
+                            pickup: schedule.pickupLocations[0],
+                            dropoff: schedule.dropoffLocations[0],
+                            transportType: schedule.transportType
+                        };
+                    }
                 }
+                
             }
         });
 
