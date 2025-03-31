@@ -3,6 +3,7 @@ const authController = require('./controllers/auth_controller');
 const scheduleController = require('./controllers/schedule_controller');
 const bookingController = require('./controllers/booking_controller');
 const locationsController = require('./controllers/locations_controller');
+const ratingsController = require('./controllers/ratings_controller');
 
 const router = express.Router();
 
@@ -36,6 +37,9 @@ router.post('/update-delay-time', bookingController.delayBooking);
 // Locations
 router.get('/locations', locationsController.fetchLocations);
 router.get('/geo-location', locationsController.fetchGeoLocation);
+
+// Ratings
+router.post('/submit-rating', ratingsController.submitRatings);
 
 
 module.exports = router;

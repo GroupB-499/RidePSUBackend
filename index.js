@@ -16,7 +16,7 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization, ngrok-skip-browser-warning'
   );
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, PUT');
 
@@ -285,7 +285,7 @@ function broadcast(data) {
 }
 
 // Start both HTTP and WebSocket server
-server.listen(PORT, () => {
+server.listen(PORT,'0.0.0.0', () => {
   console.log(`Server is running on http://localhost:${PORT}`);
   console.log(`WebSocket server running on ws://localhost:${PORT}`);
 });
