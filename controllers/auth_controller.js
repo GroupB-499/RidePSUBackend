@@ -14,10 +14,10 @@ const sendOtp = async (req, res) => { //function named sendOtp that takes req (r
   const { email } = req.body; //extract the email field from the request body
   const otp = Math.floor(100000 + Math.random() * 900000).toString(); //generates a random 6-digit OTP (One-Time Password) and converts it to a string.
 
-      // Store OTP along with expiration time
-    otpStore[email] = { otp, expiresAt: Date.now() + 300000 }; //stores the generated OTP along with its expiration time (5 minutes from the current time) in the otpStore object using the email as the key
+  // Store OTP along with expiration time
+  otpStore[email] = { otp, expiresAt: Date.now() + 300000 }; //stores the generated OTP along with its expiration time (5 minutes from the current time) in the otpStore object using the email as the key
 
-    //Email configuration for sending OTP
+  //Email configuration for sending OTP
   const mailOptions = { //object mailOptions that will contain the configuration for sending the OTP email.
     from: "alashaikhnoura2@gmail.com",
     to: email,
@@ -45,7 +45,7 @@ const sendOtp = async (req, res) => { //function named sendOtp that takes req (r
 const verifyOtp = (req, res) => {// function named verifyOtp that takes req (request) and res (response)
   const { email, otp } = req.body; //extract the email and otp fields from the request body
 
-      // Check if OTP exists and is valid
+  // Check if OTP exists and is valid
   if (!otpStore[email] || otpStore[email].expiresAt < Date.now()) { //checks if the stored OTP for the provided email does not exist or if it has expired based on the expiresAt timestamp
     return res.status(400).json({ message: "OTP expired or invalid" });//sends a 400 status response with a message indicating that the OTP has expired or is invalid.
   }
@@ -54,7 +54,7 @@ const verifyOtp = (req, res) => {// function named verifyOtp that takes req (req
     return res.status(400).json({ message: "Invalid OTP" }); //sends a 400 status response with a message indicating that the entered OTP is invalid.
   }
 
-      // Delete OTP after verification
+  // Delete OTP after verification
   delete otpStore[email]; //deletes the OTP for the provided email from the otpStore object after successful verification.
   res.json({ message: "OTP verified successfully" });
 };
@@ -174,18 +174,59 @@ const signup = async (req, res) => { //function named signup that takes req (req
 
     await db.collection('users').doc(userRecord.uid).set(user.toFirestore()); //stores the user data in the Firestore database after successful user creation in Firebase Authentication.
 
-    res.status(201).json({ message: 'User signed up successfully!',user: {
-      userId: userRecord.uid,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      phone: user.phone,
-    },
-    token, });
+    res.status(201).json({
+      message: 'User signed up successfully!', user: {
+        userId: userRecord.uid,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone,
+      },
+      token,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
+const getUsers = async (req, res) => {
+  try {
+    const userSnapshot = await db
+      .collection('users')
+      .where('role', '==', 'user')
+      .get();
+
+    if (userSnapshot.empty) {
+      return res.status(404).json({ message: 'No users found.' });
+    }
+
+    const users = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    res.status(200).json({ users });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getDrivers = async (req, res) => {
+  try {
+    const driverSnapshot = await db
+      .collection('users')
+      .where('role', '==', 'driver')
+      .get();
+
+    if (driverSnapshot.empty) {
+      return res.status(404).json({ message: 'No drivers found.' });
+    }
+
+    const drivers = driverSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    res.status(200).json({ drivers });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 const editUser = async (req, res) => {
   const { userId, name, email, phone, role } = req.body;
@@ -210,10 +251,10 @@ const editUser = async (req, res) => {
     if (email && email !== userData.email) { // Update user email if provided and different
       await auth.updateUser(userId, { email });
       updates.email = email;
-    }else if(email){
+    } else if (email) {
       updates.email = email;
     }
-    
+
 
     if (name) { // Update user name if provided
       updates.name = name;
@@ -232,13 +273,15 @@ const editUser = async (req, res) => {
       await userDocRef.update(updates); // Update user document with the collected updates
     }
 
-    res.status(200).json({ message: 'User details updated successfully!' ,user: {
-      userId: userId,
-      name: updates.name,
-      email: updates.email,
-      role: updates.role,
-      phone: updates.phone,
-    },});
+    res.status(200).json({
+      message: 'User details updated successfully!', user: {
+        userId: userId,
+        name: updates.name,
+        email: updates.email,
+        role: updates.role,
+        phone: updates.phone,
+      },
+    });
   } catch (error) {
     res.status(500).json({ error: error.message }); // Send error response if an error occurs during the update
   }
@@ -246,23 +289,23 @@ const editUser = async (req, res) => {
 
 const getUserById = async (req, res) => {
   try {
-      const userId  = req.params.userId;
+    const userId = req.params.userId;
 
-      if (!userId) {
-          return res.status(400).json({ error: "User ID is required" });
-      }
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
 
-      const userRef = db.collection("users").doc(userId);
-      const userDoc = await userRef.get();
+    const userRef = db.collection("users").doc(userId);
+    const userDoc = await userRef.get();
 
-      if (!userDoc.exists) {
-          return res.status(404).json({ error: "User not found" });
-      }
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
-      res.status(200).json({ user: { id: userDoc.id, ...userDoc.data() } });
+    res.status(200).json({ user: { id: userDoc.id, ...userDoc.data() } });
   } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ error: "Internal server error" });
+    console.error("Error fetching user:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -273,7 +316,7 @@ const checkEmailValidity = async (req, res) => {
 
     // Fetch user by email
     const userRecord = await auth.getUserByEmail(email);
-    
+
     // If user exists, return response
     return res.json({ exists: true, uid: userRecord.uid });
   } catch (error) {
@@ -282,7 +325,38 @@ const checkEmailValidity = async (req, res) => {
     }
     console.error("Error checking email:", error);
     return res.status(500).json({ error: "Internal Server Error" });
-  }}
+  }
+}
+
+
+ const deleteUser = async (req, res) => {
+  const { userId } = req.params; // Get userId from request params
+
+  if (!userId) {
+      return res.status(400).json({ error: "User ID is required." });
+  }
+
+  try {
+      // Step 1: Delete the user from Firestore
+      const userSnapshot = await db.collection('users').where('userId', '==', userId).get();
+
+      if (userSnapshot.empty) {
+          return res.status(404).json({ error: "User not found in Firestore." });
+      }
+      const batch = db.batch();
+        userSnapshot.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+
+      // Step 2: Delete the user from Firebase Authentication
+      await auth.deleteUser(userId);
+
+      res.status(200).json({ message: "User successfully deleted from Firestore and Firebase Auth." });
+
+  } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: "Failed to delete user." });
+  }
+};
 
 
 // Export the editUser function for use in other modules
@@ -294,3 +368,6 @@ exports.verifyOtp = verifyOtp;
 exports.checkEmailValidity = checkEmailValidity;
 exports.resetPassword = resetPassword;
 exports.editUser = editUser;
+exports.getUsers = getUsers;
+exports.getDrivers = getDrivers;
+exports.deleteUser = deleteUser;

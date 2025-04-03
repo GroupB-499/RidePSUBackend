@@ -10,12 +10,16 @@ const router = express.Router();
 // Auth & User Profiling routes
 router.post('/login', authController.login);
 router.post('/signup', authController.signup);
+router.get('/getUsers', authController.getUsers);
+router.get('/getDrivers', authController.getDrivers);
+router.post('/signup', authController.signup);
 router.post('/send-otp', authController.sendOtp);
 router.post('/verify-otp', authController.verifyOtp);
 router.post('/reset-password', authController.resetPassword);
 router.put('/edit-user', authController.editUser);
 router.get('/get-user-by-id/:userId', authController.getUserById);
 router.get('/check-email/:email', authController.checkEmailValidity);
+router.delete('/delete-user/:userId', authController.deleteUser);
 
 // Schedules
 router.post('/add-driver', scheduleController.addDriver);
@@ -40,6 +44,8 @@ router.get('/geo-location', locationsController.fetchGeoLocation);
 
 // Ratings
 router.post('/submit-rating', ratingsController.submitRatings);
+router.get('/get-ratings', ratingsController.getRatings);
+router.get('/get-my-ratings/:userId', ratingsController.getMyRatings);
 
 
 module.exports = router;
