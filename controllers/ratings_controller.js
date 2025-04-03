@@ -1,7 +1,7 @@
-import { db } from '../firebase.js';
-import { FieldValue } from 'firebase-admin/firestore';
+const { db } = require('../firebase');
+const { FieldValue } = require('firebase-admin/firestore');
 
-export const submitRatings = async (req, res) => {
+const submitRatings = async (req, res) => {
     const { userId, username, rating, feedback } = req.body;
 
         if (!userId || !username || !rating) {
@@ -28,7 +28,7 @@ export const submitRatings = async (req, res) => {
     }
 };
 
-export const getRatings = async (req, res) => {
+ const getRatings = async (req, res) => {
     try {
         const ratingsSnapshot = await db.collection('ratings')
             .orderBy('timestamp', 'desc') // Sorting by latest ratings first
@@ -50,7 +50,7 @@ export const getRatings = async (req, res) => {
     }
 };
 
-export const getMyRatings = async (req, res) => {
+ const getMyRatings = async (req, res) => {
     const { userId } = req.params; // Extract userId from query params
 
     if (!userId) {
@@ -78,3 +78,7 @@ export const getMyRatings = async (req, res) => {
         res.status(500).json({ error: "Failed to fetch ratings" });
     }
 };
+
+exports.submitRatings = submitRatings;
+exports.getRatings = getRatings;
+exports.getMyRatings = getMyRatings;
