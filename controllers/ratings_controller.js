@@ -3,30 +3,56 @@ const { FieldValue } = require('firebase-admin/firestore');
 
 const submitRatings = async (req, res) => {
     const { userId, username, rating, feedback } = req.body;
-
-        if (!userId || !username || !rating) {
-            return res.status(400).json({ error: "User ID, username and rating are required." });
-        }
-    try {
-        
-
-        const ratingData = {
-            userId,
-            username,
-            rating,
-            feedback: feedback || "",
-            reply: false, // Default value
-            timestamp: FieldValue.serverTimestamp(),
-        };
-
-        await db.collection('ratings').add(ratingData);
-
-        res.status(200).json({ message: "Rating submitted successfully!" });
-    } catch (error) {
-        console.error("Error submitting rating:", error);
-        res.status(500).json({ error: "Failed to submit rating" });
+  
+    if (!userId || !username || !rating) {
+      return res.status(400).json({ error: "User ID, username and rating are required." });
     }
-};
+  
+    try {
+      const ratingData = {
+        userId,
+        username,
+        rating,
+        feedback: feedback || "",
+        reply: "", // changed from boolean to string
+        timestamp: FieldValue.serverTimestamp(),
+      };
+  
+      await db.collection('ratings').add(ratingData);
+  
+      res.status(200).json({ message: "Rating submitted successfully!" });
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      res.status(500).json({ error: "Failed to submit rating" });
+    }
+  };
+  
+
+  const replyToRating = async (req, res) => {
+    const { id } = req.params;
+    const { reply } = req.body;
+  
+    if (!reply || !reply.trim()) {
+      return res.status(400).json({ error: "Reply content is required." });
+    }
+  
+    try {
+      const ratingRef = db.collection('ratings').doc(id);
+      const ratingDoc = await ratingRef.get();
+  
+      if (!ratingDoc.exists) {
+        return res.status(404).json({ error: "Rating not found." });
+      }
+  
+      await ratingRef.update({ reply });
+  
+      res.status(200).json({ message: "Reply added successfully." });
+    } catch (error) {
+      console.error("Error replying to rating:", error);
+      res.status(500).json({ error: "Failed to add reply." });
+    }
+  };
+  
 
  const getRatings = async (req, res) => {
     try {
@@ -82,3 +108,4 @@ const submitRatings = async (req, res) => {
 exports.submitRatings = submitRatings;
 exports.getRatings = getRatings;
 exports.getMyRatings = getMyRatings;
+exports.replyToRating = replyToRating;

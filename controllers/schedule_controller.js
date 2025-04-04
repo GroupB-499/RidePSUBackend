@@ -153,44 +153,61 @@ const addSchedule = async (req, res) => {
   };
   
   
+  const updateSchedule = async (req, res) => {
+    const { id } = req.params;
+    const { time, endTime, pickupLocations, dropoffLocations, transportType } = req.body;
+  
+    if (!time || !pickupLocations?.length || !dropoffLocations?.length || !transportType) {
+      return res.status(400).json({ error: "All fields are required." });
+    }
   
   
-
-const updateSchedule = async (req, res) => { // Update a schedule, Function to update a schedule
-  const { id } = req.params; // Extract the schedule ID from the request parameters
-  const { time, endTime, pickupLocations, dropoffLocations, transportType } = req.body; // Extract schedule update data from the request body
-
-  try {
-    const scheduleRef = db.collection("schedules").doc(id); // Get a reference to the schedule document
-    const scheduleDoc = await scheduleRef.get(); // Retrieve the schedule document
-
-    if (!scheduleDoc.exists) { // If the schedule document does not exist
-      return res.status(404).json({ error: "Schedule not found." });
-    }
-
-    if (time && !isValidTime(time) || endTime && !isValidTime(endTime)) { // Check if the updated timings are valid
-      return res.status(400).json({ error: "Schedule timings must be between 8:00 AM and 6:00 PM." });
-    }
-
-    const updatedData = {}; // Initialize an object to store updated schedule data
-    if (time) updatedData.time = time; // Update the schedule time if provided
-    if (endTime) updatedData.endTime = endTime;
-    if (pickupLocations) updatedData.pickupLocations = pickupLocations; // Update pickup locations if provided
-    if (dropoffLocations) updatedData.dropoffLocations = dropoffLocations; // Update dropoff locations if provided
-    if (transportType) { // If transport type is provided
-      if (!["golf car", "shuttle bus"].includes(transportType.toLowerCase())) { // Check if the transport type is valid
-        return res.status(400).json({ error: "Invalid transport type. Must be 'golf car' or 'shuttle bus'." });
+    try {
+      const scheduleRef = db.collection("schedules").doc(id);
+      const scheduleDoc = await scheduleRef.get();
+  
+      if (!scheduleDoc.exists) {
+        return res.status(404).json({ error: "Schedule not found." });
       }
-      updatedData.transportType = transportType; // Update the transport type
+  
+      // Check if an identical schedule (excluding this one) already exists
+      const schedulesSnapshot = await db.collection("schedules").get();
+  
+      const duplicateSchedule = schedulesSnapshot.docs.find((doc) => {
+        if (doc.id === id) return false; // Skip current being updated
+  
+        const schedule = doc.data();
+  
+        return (
+          schedule.pickupLocations[0] === pickupLocations &&
+          schedule.dropoffLocations[0] === dropoffLocations &&
+          schedule.time === time &&
+          schedule.transportType.toLowerCase() === transportType.toLowerCase()
+        );
+      });
+  
+      if (duplicateSchedule) {
+        return res.status(400).json({ error: "A schedule with the same pickup, dropoff, time, and transport type already exists." });
+      }
+  
+      // If no duplicate, perform update
+      const updatedData = {
+        time,
+        pickupLocations,
+        dropoffLocations,
+        transportType
+      };
+  
+      if (endTime) updatedData.endTime = endTime;
+  
+      await scheduleRef.update(updatedData);
+  
+      res.status(200).json({ message: "Schedule updated successfully!", id, ...updatedData });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
-
-    await scheduleRef.update(updatedData); // Update the schedule document with the new data
-    res.status(200).json({ message: "Schedule updated successfully!", id, ...updatedData }); // Send a success response with the updated schedule details
-
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+  };
+  
 
 const deleteSchedule = async (req, res) => { // Delete a schedule, Function to delete a schedule
   const { id } = req.params; // Extract the schedule ID from the request parameters

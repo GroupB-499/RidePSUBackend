@@ -227,6 +227,44 @@ const getDrivers = async (req, res) => {
   }
 };
 
+const enableAllUsers = async (req, res) => {
+  try {
+    const usersSnapshot = await db.collection('users').get();
+
+    if (usersSnapshot.empty) {
+      return res.status(404).json({ message: 'No users found.' });
+    }
+
+    const batch = db.batch();
+
+    usersSnapshot.forEach((doc) => {
+      const userRef = db.collection('users').doc(doc.id);
+      batch.update(userRef, { enabled: true });
+    });
+
+    await batch.commit();
+
+    res.status(200).json({ message: 'All users updated with enabled: true' });
+  } catch (error) {
+    console.error('Error updating users:', error);
+    res.status(500).json({ error: 'Failed to update users' });
+  }
+};
+
+const updateUserStatus = async (req, res) => {
+  const { userId } = req.params;
+  const { enabled } = req.body;
+
+  try {
+    const userRef = db.collection('users').doc(userId);
+    await userRef.update({ enabled });
+
+    res.status(200).json({ message: `User ${enabled ? 'enabled' : 'disabled'} successfully.` });
+  } catch (error) {
+    console.error('Error updating user status:', error);
+    res.status(500).json({ error: 'Failed to update user status.' });
+  }
+};
 
 const editUser = async (req, res) => {
   const { userId, name, email, phone, role } = req.body;
@@ -371,3 +409,5 @@ exports.editUser = editUser;
 exports.getUsers = getUsers;
 exports.getDrivers = getDrivers;
 exports.deleteUser = deleteUser;
+exports.enableAllUsers = enableAllUsers;
+exports.updateUserStatus = updateUserStatus;

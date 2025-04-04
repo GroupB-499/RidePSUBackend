@@ -19,12 +19,16 @@ router.post('/reset-password', authController.resetPassword);
 router.put('/edit-user', authController.editUser);
 router.get('/get-user-by-id/:userId', authController.getUserById);
 router.get('/check-email/:email', authController.checkEmailValidity);
+router.patch('/enable', authController.enableAllUsers);
+router.patch('/update-user-status/:userId', authController.updateUserStatus);
 router.delete('/delete-user/:userId', authController.deleteUser);
 
 // Schedules
 router.post('/add-driver', scheduleController.addDriver);
 router.get('/get-schedules', scheduleController.getSchedules);
 router.post('/add-schedule', scheduleController.addSchedule);
+router.put('/update-schedule/:id', scheduleController.updateSchedule);
+router.delete('/delete-schedule/:id', scheduleController.deleteSchedule);
 router.get('/get-driver-schedules', scheduleController.getSchedulesByDriverId);
 router.get('/get-notifications/:userId', scheduleController.getNotificationsById);
 
@@ -44,6 +48,7 @@ router.get('/geo-location', locationsController.fetchGeoLocation);
 
 // Ratings
 router.post('/submit-rating', ratingsController.submitRatings);
+router.patch('/update-rating/:id', ratingsController.replyToRating);
 router.get('/get-ratings', ratingsController.getRatings);
 router.get('/get-my-ratings/:userId', ratingsController.getMyRatings);
 
