@@ -193,8 +193,8 @@ const addSchedule = async (req, res) => {
       // If no duplicate, perform update
       const updatedData = {
         time,
-        pickupLocations,
-        dropoffLocations,
+        pickupLocations: [pickupLocations],
+        dropoffLocations: [dropoffLocations],
         transportType
       };
   
