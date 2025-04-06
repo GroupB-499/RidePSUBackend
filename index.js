@@ -39,7 +39,7 @@ wss.on('connection', (ws) => {
 
   ws.on('message', (message) => {
     const data = JSON.parse(message);
-    console.log("hello");
+    console.log("hello" + data.type);
     // If a driver sends a location update
     if (data.type === 'driver_location') {
       driverLocation = { lat: data.lat, lng: data.lng, userId: data.userId, date: data.date, time: data.time };
@@ -58,6 +58,46 @@ wss.on('connection', (ws) => {
     if (data.type === 'ride_delayed') {
       sendPushNotification(data.userId, data.scheduleId, 'Ride Delayed', 'Your ride has been delayed.');
     }
+    if (data.type === 'complaint') {
+
+      (async () => {
+        console.log("hello1");
+
+        try {
+          // Fetch all user tokens from Firestore
+          const snapshot = await db.collection('fcmTokens').where('userId', "==", "XC8v4PcCYNRisQ7ElzdB3yO18532").get();
+          const tokensSet = new Set();
+
+          snapshot.forEach((doc) => {
+            const docTokens = doc.data().tokens;
+            if (docTokens) {
+              docTokens.forEach((token) => tokensSet.add(token)); // Add unique tokens
+            }
+          });
+
+          const tokens = Array.from(tokensSet); // Convert Set to an array
+
+          if (tokens.length === 0) {
+            console.log('No FCM tokens found.');
+          } else {
+            console.log('Unique FCM Tokens:', tokens);
+          }
+
+          console.log("tokens: " + tokens);
+
+          const message = {
+            notification: { title: "Driver Complaint", body: "A Complaint was registered by a Driver" },
+            tokens,
+          };
+
+          const response = await messaging.sendEachForMulticast(message);
+
+          console.log('Notifications sent successfully:', response);
+        } catch (error) {
+          console.error('Error sending notification:', error);
+        }
+      })();
+    }
   });
 
   ws.on('close', () => {
@@ -73,74 +113,73 @@ async function sendPushNotification(userId, scheduleId, title, body) {
     const snapshot = await db.collection('fcmTokens').get();
     const tokensSet = new Set();
 
-snapshot.forEach((doc) => {
-  const docTokens = doc.data().tokens;
-  if (docTokens) {
-    docTokens.forEach((token) => tokensSet.add(token)); // Add unique tokens
-  }
-});
+    snapshot.forEach((doc) => {
+      const docTokens = doc.data().tokens;
+      if (docTokens) {
+        docTokens.forEach((token) => tokensSet.add(token)); // Add unique tokens
+      }
+    });
 
-const tokens = Array.from(tokensSet); // Convert Set to an array
+    const tokens = Array.from(tokensSet); // Convert Set to an array
 
-if (tokens.length === 0) {
-  console.log('No FCM tokens found.');
-} else {
-  console.log('Unique FCM Tokens:', tokens);
-}
+    if (tokens.length === 0) {
+      console.log('No FCM tokens found.');
+    } else {
+      console.log('Unique FCM Tokens:', tokens);
+    }
 
     const message = {
       notification: { title, body },
       tokens,
     };
 
-
     // Send notification to all tokens
     const response = await messaging.sendEachForMulticast(message);
     console.log('Notifications sent successfully:', response);
 
-if(scheduleId != null){
-  
-    const bookingsSnapshot = await db
-      .collection("bookings")
-      .where("scheduleId", "==", scheduleId)
-      .get();
+    if (scheduleId != null) {
 
-    
+      const bookingsSnapshot = await db
+        .collection("bookings")
+        .where("scheduleId", "==", scheduleId)
+        .get();
+
+
       const userIds = new Set();
-    bookingsSnapshot.forEach((doc) => {
-      const booking = doc.data();
-      
+      bookingsSnapshot.forEach((doc) => {
+        const booking = doc.data();
+
         userIds.add(booking.userId);
-      
-    });
 
-    if (userIds.size === 0) {
-      console.log("No users found for notifications.");
-      return;
-    } // Fetch all FCM tokens for the selected user IDs
+      });
 
-    Array.from(userIds).map(async(userId)=>{
+      if (userIds.size === 0) {
+        console.log("No users found for notifications.");
+        return;
+      } // Fetch all FCM tokens for the selected user IDs
+
+      Array.from(userIds).map(async (userId) => {
+        await db.collection("notifications").add({
+          userId,
+          title,
+          body,
+          timestamp: FieldValue.serverTimestamp(),
+        });
+      })
+
+
+    }
+    if (userId != null) {
       await db.collection("notifications").add({
         userId,
         title,
         body,
         timestamp: FieldValue.serverTimestamp(),
       });
-    })
-      
-      
-}
-if(userId != null){
-  await db.collection("notifications").add({
-    userId,
-    title,
-    body,
-    timestamp: FieldValue.serverTimestamp(),
-  });
-}
+    }
 
     // Save notification history in Firestore
-    
+
 
   } catch (error) {
     console.error('Error sending notification:', error);
@@ -182,7 +221,7 @@ cron.schedule("* * * * *", async () => {
     console.log("schedule ids: " + scheduleIds);
 
     // Fetch bookings that have today's date and one of the schedule IDs
-    
+
     const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: "Asia/Riyadh" };
     const today = now.toLocaleDateString('en-CA', options); // YYYY-MM-DD
     console.log(today);
@@ -285,7 +324,7 @@ function broadcast(data) {
 }
 
 // Start both HTTP and WebSocket server
-server.listen(PORT,'0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on http://localhost:${PORT}`);
   console.log(`WebSocket server running on ws://localhost:${PORT}`);
 });

@@ -52,5 +52,11 @@ router.patch('/update-rating/:id', ratingsController.replyToRating);
 router.get('/get-ratings', ratingsController.getRatings);
 router.get('/get-my-ratings/:userId', ratingsController.getMyRatings);
 
+router.post('/submit-complaint', ratingsController.submitComplaints);
+router.patch('/update-complaint/:id', ratingsController.replyToComplaint);
+router.get('/get-complaints', ratingsController.getComplaints);
+router.get('/get-my-complaints/:userId', ratingsController.getMyComplaints);
+
+
 
 module.exports = router;

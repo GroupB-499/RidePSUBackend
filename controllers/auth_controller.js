@@ -117,6 +117,9 @@ const login = async (req, res) => {
     //These lines extract the user data from the first document in the userSnapshot.
     const userDoc = userSnapshot.docs[0];
     const userData = userDoc.data();
+    if(!userData.enabled) { //checks if the user is not enabled.
+      return res.status(403).json({ error: 'User is disabled. Please contact support.' }); //sends a 403 status response with an error message if the user is disabled.
+    }
 
     const isPasswordValid = await bcrypt.compare(password, userData.password); //compares the password provided by the user with the hashed password stored in the database using bcrypt.
 
@@ -170,7 +173,7 @@ const signup = async (req, res) => { //function named signup that takes req (req
     const token = await auth.createCustomToken(userRecord.uid);
 
 
-    const user = new User(userRecord.uid, name, email, phone, hashedPassword, role); //creates a new User object with the user details including the user ID, name, email, phone, hashed password, and role.
+    const user = new User(userRecord.uid, name, email, phone, hashedPassword, role,true); //creates a new User object with the user details including the user ID, name, email, phone, hashed password, and role.
 
     await db.collection('users').doc(userRecord.uid).set(user.toFirestore()); //stores the user data in the Firestore database after successful user creation in Firebase Authentication.
 
