@@ -86,7 +86,7 @@ wss.on('connection', (ws) => {
           console.log("tokens: " + tokens);
 
           const message = {
-            notification: { title: "Driver Complaint", body: "A Complaint was registered by a Driver" },
+            notification: { title: "Vehicle Issue", body: "A vehicle issue was reported by a Driver" },
             tokens,
           };
 
