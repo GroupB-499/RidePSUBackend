@@ -64,7 +64,7 @@ const bookingCount = async (req, res) => {
             .where('pickupLocations', 'array-contains', pickup).get();
 
         if (schedulesSnapshot.empty) {
-            return res.status(404).json({ error: "No booking available!" }); // No schedules found for the time
+            return res.status(404).json({ error: "The trip you selected does not exist, please refer to schedules page." }); // No schedules found for the time
         }
         console.log(schedulesSnapshot.docs[0]);
 
@@ -305,7 +305,7 @@ const getLatestDriverBooking = async (req, res) => {
                     transportType: schedule.transportType
                 };
                 currentBookingFlag = true;
-            } else if (bookingTime > currentTime) {
+            } else if (bookingTime < currentTime) {
                 console.log("FETCHING CURRENT BOOKING12!")
                 if(!currentBookingFlag){
                     if (bookingTime < minTime) {

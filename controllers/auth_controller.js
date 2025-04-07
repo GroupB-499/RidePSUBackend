@@ -22,7 +22,10 @@ const sendOtp = async (req, res) => { //function named sendOtp that takes req (r
     from: "alashaikhnoura2@gmail.com",
     to: email,
     subject: "Your OTP Code",
-    text: `Your OTP is: ${otp}`,
+    text: `*Welcome to RidePSU!*\n
+
+Thank you for choosing our transportation services!\n
+Your OTP for verification is ${otp}\nPlease enter this code to complete your sign-up process.`,
   };
 
   // Nodemailer transporter to send the email
@@ -117,7 +120,7 @@ const login = async (req, res) => {
     //These lines extract the user data from the first document in the userSnapshot.
     const userDoc = userSnapshot.docs[0];
     const userData = userDoc.data();
-    if(!userData.enabled) { //checks if the user is not enabled.
+    if (!userData.enabled) { //checks if the user is not enabled.
       return res.status(403).json({ error: 'User is disabled. Please contact support.' }); //sends a 403 status response with an error message if the user is disabled.
     }
 
@@ -173,7 +176,7 @@ const signup = async (req, res) => { //function named signup that takes req (req
     const token = await auth.createCustomToken(userRecord.uid);
 
 
-    const user = new User(userRecord.uid, name, email, phone, hashedPassword, role,true); //creates a new User object with the user details including the user ID, name, email, phone, hashed password, and role.
+    const user = new User(userRecord.uid, name, email, phone, hashedPassword, role, true); //creates a new User object with the user details including the user ID, name, email, phone, hashed password, and role.
 
     await db.collection('users').doc(userRecord.uid).set(user.toFirestore()); //stores the user data in the Firestore database after successful user creation in Firebase Authentication.
 
@@ -370,32 +373,32 @@ const checkEmailValidity = async (req, res) => {
 }
 
 
- const deleteUser = async (req, res) => {
+const deleteUser = async (req, res) => {
   const { userId } = req.params; // Get userId from request params
 
   if (!userId) {
-      return res.status(400).json({ error: "User ID is required." });
+    return res.status(400).json({ error: "User ID is required." });
   }
 
   try {
-      // Step 1: Delete the user from Firestore
-      const userSnapshot = await db.collection('users').where('userId', '==', userId).get();
+    // Step 1: Delete the user from Firestore
+    const userSnapshot = await db.collection('users').where('userId', '==', userId).get();
 
-      if (userSnapshot.empty) {
-          return res.status(404).json({ error: "User not found in Firestore." });
-      }
-      const batch = db.batch();
-        userSnapshot.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
+    if (userSnapshot.empty) {
+      return res.status(404).json({ error: "User not found in Firestore." });
+    }
+    const batch = db.batch();
+    userSnapshot.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
 
-      // Step 2: Delete the user from Firebase Authentication
-      await auth.deleteUser(userId);
+    // Step 2: Delete the user from Firebase Authentication
+    await auth.deleteUser(userId);
 
-      res.status(200).json({ message: "User successfully deleted from Firestore and Firebase Auth." });
+    res.status(200).json({ message: "User successfully deleted from Firestore and Firebase Auth." });
 
   } catch (error) {
-      console.error("Error deleting user:", error);
-      res.status(500).json({ error: "Failed to delete user." });
+    console.error("Error deleting user:", error);
+    res.status(500).json({ error: "Failed to delete user." });
   }
 };
 
