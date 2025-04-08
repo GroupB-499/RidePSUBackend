@@ -305,7 +305,7 @@ const getLatestDriverBooking = async (req, res) => {
                     transportType: schedule.transportType
                 };
                 currentBookingFlag = true;
-            } else if (bookingTime < currentTime) {
+            } else if (bookingTime > currentTime) {
                 console.log("FETCHING CURRENT BOOKING12!")
                 if(!currentBookingFlag){
                     if (bookingTime < minTime) {
