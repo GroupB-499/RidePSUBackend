@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt'); //This line imports the bcrypt module, which i
 const { auth, db } = require('../firebase'); //This line imports the auth and db objects from a file named firebase
 const nodemailer = require("nodemailer"); //This line imports the nodemailer module, which is a library for sending emails from Node.js applications
 const User = require('../models/user_model'); //This line imports the User model from a file named user_model
+const admin = require('firebase-admin'); //This line imports the admin module from the Firebase Admin SDK, which is used for server-side operations with Firebase services.
 
 let otpStore = {}; // Object to store OTPs generated for users
 
@@ -372,9 +373,8 @@ const checkEmailValidity = async (req, res) => {
   }
 }
 
-
 const deleteUser = async (req, res) => {
-  const { userId } = req.params; // Get userId from request params
+  const { userId } = req.params;
 
   if (!userId) {
     return res.status(400).json({ error: "User ID is required." });
@@ -387,6 +387,7 @@ const deleteUser = async (req, res) => {
     if (userSnapshot.empty) {
       return res.status(404).json({ error: "User not found in Firestore." });
     }
+
     const batch = db.batch();
     userSnapshot.forEach(doc => batch.delete(doc.ref));
     await batch.commit();
@@ -394,7 +395,21 @@ const deleteUser = async (req, res) => {
     // Step 2: Delete the user from Firebase Authentication
     await auth.deleteUser(userId);
 
-    res.status(200).json({ message: "User successfully deleted from Firestore and Firebase Auth." });
+    // Step 3: Remove driverId from schedules where driverId == userId
+    const schedulesRef = db.collection('schedules');
+    const schedulesSnapshot = await schedulesRef.where('driverId', '==', userId).get();
+
+    const updatePromises = [];
+    schedulesSnapshot.forEach(doc => {
+      const scheduleRef = schedulesRef.doc(doc.id);
+      updatePromises.push(scheduleRef.update({ driverId: admin.firestore.FieldValue.delete() }));
+    });
+
+    await Promise.all(updatePromises);
+
+    res.status(200).json({
+      message: "User successfully deleted from Firestore, Firebase Auth, and driverId removed from schedules.",
+    });
 
   } catch (error) {
     console.error("Error deleting user:", error);

@@ -77,37 +77,55 @@ const getScheduleById = async (req, res) => {
 
 // Assign driver to routes based on conditions
 // Just a helper function for adding driver Id to multiple schedules at once
-const addDriver= async (req, res) => {
+const addDriver = async (req, res) => {
   try {
-      const { driverId, startTimeFrom, startTimeTo, transportType } = req.body;
+    const { driverId, startTimeFrom, startTimeTo, transportType } = req.body;
 
-      if (!driverId || !startTimeFrom || !startTimeTo || !transportType) {
-          return res.status(400).json({ message: 'Missing required fields' });
+    if (!driverId || !startTimeFrom || !startTimeTo || !transportType) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    const schedulesRef = db.collection('schedules');
+    const querySnapshot = await schedulesRef
+      .where('time', '>=', startTimeFrom)
+      .where('time', '<=', startTimeTo)
+      .where('transportType', '==', transportType)
+      .get();
+
+    if (querySnapshot.empty) {
+      return res.status(404).json({ message: 'No schedules found' });
+    }
+
+    const conflicts = [];
+    const updatePromises = [];
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+
+      // Check if the schedule already has a driver assigned
+      if (data.driverId) {
+        conflicts.push({ id: doc.id, time: data.time, assignedDriver: data.driverId });
+      } else {
+        const scheduleRef = schedulesRef.doc(doc.id);
+        updatePromises.push(scheduleRef.update({ driverId }));
       }
+    });
 
-      const schedulesRef = db.collection('schedules');
-      const querySnapshot = await schedulesRef
-          .where('time', '>=', startTimeFrom)
-          .where('time', '<=', startTimeTo)
-          .where('transportType', '==', transportType)
-          .get();
-
-      if (querySnapshot.empty) {
-          return res.status(404).json({ message: 'No schedules found' });
-      }
-      const updatePromises = [];
-      querySnapshot.forEach((doc) => {
-          const scheduleRef = schedulesRef.doc(doc.id);
-          updatePromises.push(scheduleRef.update({ driverId }));
+    if (conflicts.length > 0) {
+      return res.status(409).json({
+        message: 'Some schedules are already assigned to another driver',
+        conflicts,
       });
+    }
 
-      await Promise.all(updatePromises);
-      res.status(200).json({ message: 'Driver assigned successfully' });
+    await Promise.all(updatePromises);
+    res.status(200).json({ message: 'Driver assigned successfully' });
   } catch (error) {
-      console.error('Error assigning driver:', error);
-      res.status(500).json({ message: 'Internal server error' });
+    console.error('Error assigning driver:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 
 const addSchedule = async (req, res) => {
