@@ -113,8 +113,9 @@ const addDriver = async (req, res) => {
 
     if (conflicts.length > 0) {
       return res.status(409).json({
-        message: 'Some schedules are already assigned to another driver',
+        message: 'Driver assignment failed. Schedule already taken from ',
         conflicts,
+        transportType
       });
     }
 
