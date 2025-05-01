@@ -207,7 +207,7 @@ cron.schedule("* * * * *", async () => {
   try {
     const schedulesSnapshot = await db
       .collection("schedules")
-      .where("time", "==", "08:10")
+      .where("time", "==", currentTimeString)
       .get();
 
     if (schedulesSnapshot.empty) {
